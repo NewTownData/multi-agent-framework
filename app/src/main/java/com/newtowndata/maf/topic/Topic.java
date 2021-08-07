@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.newtowndata.maf;
+package com.newtowndata.maf.topic;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import com.newtowndata.maf.event.Event;
 
-class AppTest {
+public interface Topic {
 
-  @Test
-  @Timeout(2000L)
-  void main() throws InterruptedException {
-    App.main(new String[0]);
-  } 
+  void publish(Event event);
+  
+  TopicConsumer subscribe();
 
 }

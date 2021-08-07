@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.newtowndata.maf;
+package com.newtowndata.maf.event;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import java.net.URI;
 
-class AppTest {
+public interface EventProducer {
 
-  @Test
-  @Timeout(2000L)
-  void main() throws InterruptedException {
-    App.main(new String[0]);
-  } 
+  Event create(URI source, URI target, String type, Object data);
 
 }

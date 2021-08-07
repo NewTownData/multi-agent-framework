@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.newtowndata.maf;
+package com.newtowndata.maf.topic;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import com.newtowndata.maf.event.Event;
+import java.util.Optional;
 
-class AppTest {
+public interface TopicConsumer extends AutoCloseable {
 
-  @Test
-  @Timeout(2000L)
-  void main() throws InterruptedException {
-    App.main(new String[0]);
-  } 
+  Optional<Event> poll(long waitInMillis) throws InterruptedException;
+
+  void close();
 
 }

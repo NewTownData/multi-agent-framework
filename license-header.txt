@@ -13,17 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.newtowndata.maf;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
-class AppTest {
-
-  @Test
-  @Timeout(2000L)
-  void main() throws InterruptedException {
-    App.main(new String[0]);
-  } 
-
-}

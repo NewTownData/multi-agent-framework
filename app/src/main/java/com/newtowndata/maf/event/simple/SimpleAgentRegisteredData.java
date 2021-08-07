@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.newtowndata.maf;
+package com.newtowndata.maf.event.simple;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+public class SimpleAgentRegisteredData {
 
-class AppTest {
+  private final String name;
 
-  @Test
-  @Timeout(2000L)
-  void main() throws InterruptedException {
-    App.main(new String[0]);
-  } 
+  public SimpleAgentRegisteredData(String name) {
+    this.name = name;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  @Override
+  public String toString() {
+    return "SimpleAgentRegisteredData [name=" + name + "]";
+  }
 
 }

@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.newtowndata.maf;
+package com.newtowndata.maf.runtime;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+public interface Runtime extends AutoCloseable {
 
-class AppTest {
+  void registerEnvironment(EnvironmentRegisterCallback callback);
 
-  @Test
-  @Timeout(2000L)
-  void main() throws InterruptedException {
-    App.main(new String[0]);
-  } 
+  void registerAgent(String name, AgentRegisterCallback callback);
+
+  void start();
+
+  void close();
 
 }

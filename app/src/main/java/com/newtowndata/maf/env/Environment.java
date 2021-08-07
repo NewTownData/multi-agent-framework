@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.newtowndata.maf;
+package com.newtowndata.maf.env;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
+import com.newtowndata.maf.agent.Agent;
+import com.newtowndata.maf.config.AgentConfig;
 
-class AppTest {
+public abstract class Environment extends Agent {
 
-  @Test
-  @Timeout(2000L)
-  void main() throws InterruptedException {
-    App.main(new String[0]);
-  } 
+  public Environment(AgentConfig agentConfig) {
+    super(agentConfig);
+  }
 
 }
