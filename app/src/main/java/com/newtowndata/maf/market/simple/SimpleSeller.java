@@ -26,8 +26,7 @@ import org.slf4j.LoggerFactory;
 
 public class SimpleSeller implements Seller {
 
-  private final Logger LOG = LoggerFactory.getLogger(SimpleSeller.class);
-
+  private final Logger log;
   private final String name;
   private final int minPrice;
   private final int maxAmount;
@@ -39,8 +38,6 @@ public class SimpleSeller implements Seller {
 
   private int currentAmountSold = 0;
   private int currentStep = -1;
-  private int lastDealPrice = 0;
-  private boolean dealMade = false;
 
   /**
    * Constructor.
@@ -51,6 +48,7 @@ public class SimpleSeller implements Seller {
    * @param a a in a*price + b = amount.
    */
   public SimpleSeller(String name, int minPrice, int maxAmount, double a) {
+    this.log = LoggerFactory.getLogger(SimpleSeller.class.getName() + "#" + name);
     this.name = name;
     this.minPrice = minPrice;
     this.maxAmount = maxAmount;
@@ -69,34 +67,54 @@ public class SimpleSeller implements Seller {
   @Override
   public List<Ask> sell(Quote quote) {
     if (currentAmountSold >= maxAmount) {
-      LOG.debug("All items offered in {}", this);
+      log.debug("All items offered in {}", this);
       return Collections.emptyList();
     }
 
-    if (!dealMade) {
-      if (quote.getTotalBidAmount() < quote.getTotalAskAmount()) {
-        lastDealPrice -= 1;
+    int targetPrice;
+    if (quote.getBestAsk().isEmpty()) {
+      targetPrice = (int) Math.round(quote.getPrice() * 1.2);
+      log.info("No ask, target price: {}", targetPrice);
+    } else {
+      targetPrice = quote.getBestAsk().get().getPrice();
+      log.info("Ask, target price: {}", targetPrice);
+    }
+
+    int spread = 0;
+    if (quote.getBestBid().isPresent() && quote.getBestAsk().isPresent()) {
+      spread = quote.getBestAsk().get().getPrice() - quote.getBestBid().get().getPrice();
+    }
+
+    int quoteDiff = (quote.getTotalAskAmount() - quote.getTotalBidAmount()) * 10 / maxAmount;
+    if (quoteDiff == 0) {
+      if (quote.getBestAsk().isPresent()) {
+        targetPrice =
+            quote.getBestAsk().get().getPrice() - Math.max(0, (int) Math.round(spread * 0.2));
       }
+      log.info("Amounts equal: {}", targetPrice);
+    } else if (quoteDiff > 0) {
+      targetPrice =
+          quote.getBestAsk().get().getPrice() - Math.max(1, (int) Math.round(spread * 0.7));
+      log.info("Bid, spread {}, target price: {}", spread, targetPrice);
+    } else {
+      if (spread > 2) {
+        targetPrice -= 1;
+      }
+      log.info("High demand: {}", targetPrice);
     }
 
-    if (lastDealPrice < minPrice) {
-      lastDealPrice = quote.getPrice();
+    if (targetPrice < minPrice) {
+      targetPrice = minPrice;
+      log.info("Price too low");
     }
 
-    int minAsk = minPrice;
-    if (quote.getBestBid().isPresent()) {
-      minAsk = quote.getBestBid().get().getPrice();
-    }
-
+    int amount = (int) Math.round(Math.max(maxAmount, a * targetPrice + b) - currentAmountSold);
     List<Ask> asks = new ArrayList<>();
-    if (quote.getPrice() >= minPrice) {
-      int amount = (int) Math.round(Math.max(maxAmount, a * lastDealPrice + b) - currentAmountSold);
-      for (int i = 0; i < amount; i++) {
-        asks.add(new Ask(UUID.randomUUID().toString(), Math.max(lastDealPrice + i, minAsk), 1));
-      }
+    for (int i = 0; i < Math.min(maxAmount - currentAmountSold, amount); i++) {
+      asks.add(new Ask(UUID.randomUUID().toString(), targetPrice, 1));
     }
+    log.info("Created {} asks", asks.size());
 
-    dealMade = false;
     return asks;
   }
 
@@ -106,8 +124,6 @@ public class SimpleSeller implements Seller {
       totalPriceReceived += ask.getPrice();
       totalAmountSold += ask.getAmount();
       currentAmountSold += ask.getAmount();
-      lastDealPrice = ask.getPrice();
-      dealMade = true;
     }
   }
 

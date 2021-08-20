@@ -87,5 +87,35 @@ public class MarketTest {
     assertTrue(price > 100);
   }
 
+  @Test
+  void testMarketSameDemand() {
+    int initialMarketPrice = 100;
+
+    Buyer buyer1 = new SimpleBuyer("B1", 200, 100, -0.6);
+    Buyer buyer2 = new SimpleBuyer("B2", 300, 200, -0.4);
+    Buyer buyer3 = new SimpleBuyer("B3", 170, 150, -0.7);
+
+    Seller seller1 = new SimpleSeller("S1", 30, 100, 6);
+    Seller seller2 = new SimpleSeller("S2", 50, 350, 7);
+
+    Market market = new SimpleMarket(10);
+    market.registerBuyer(buyer1);
+    market.registerBuyer(buyer2);
+    market.registerBuyer(buyer3);
+    market.registerSeller(seller1);
+    market.registerSeller(seller2);
+
+    market.initializeMarket(0, initialMarketPrice);
+
+    int price = market.runMarket(1);
+    LOG.info("Current price {}", price);
+    LOG.info("Buyer 1: {}", buyer1.getTotalTrade());
+    LOG.info("Buyer 2: {}", buyer2.getTotalTrade());
+    LOG.info("Buyer 3: {}", buyer3.getTotalTrade());
+    LOG.info("Seller 1: {}", seller1.getTotalTrade());
+    LOG.info("Seller 2: {}", seller2.getTotalTrade());
+
+    assertTrue(price >= 100 && price <= 110);
+  }
 
 }

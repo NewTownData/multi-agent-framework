@@ -21,9 +21,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimpleBuyer implements Buyer {
 
+  private final Logger log;
   private final String name;
   private final int maxPrice;
   private final int maxAmount;
@@ -35,8 +38,6 @@ public class SimpleBuyer implements Buyer {
 
   private int currentAmountBought = 0;
   private int currentStep = -1;
-  private int lastDealPrice = 0;
-  private boolean dealMade = false;
 
   /**
    * Constructor.
@@ -47,6 +48,7 @@ public class SimpleBuyer implements Buyer {
    * @param a a in a*price + b = amount.
    */
   public SimpleBuyer(String name, int maxPrice, int maxAmount, double a) {
+    this.log = LoggerFactory.getLogger(SimpleBuyer.class.getName() + "#" + name);
     this.name = name;
     this.maxPrice = maxPrice;
     this.maxAmount = maxAmount;
@@ -66,40 +68,55 @@ public class SimpleBuyer implements Buyer {
   @Override
   public List<Bid> buy(Quote quote) {
     if (currentAmountBought >= maxAmount) {
+      log.debug("All items offered in {}", this);
       return Collections.emptyList();
     }
 
-    if (quote.getBestBid().isPresent()) {
-      if (lastDealPrice < quote.getBestBid().get().getAmount()) {
-        lastDealPrice = quote.getBestBid().get().getAmount();
-      }
+
+    int targetPrice;
+    if (quote.getBestBid().isEmpty()) {
+      targetPrice = (int) Math.round(quote.getPrice() * 0.8);
+      log.info("No bid, target price: {}", targetPrice);
     } else {
-      if (lastDealPrice < quote.getPrice()) {
-        lastDealPrice = quote.getPrice() - 1;
+      targetPrice = quote.getBestBid().get().getPrice();
+      log.info("Bid, target price: {}", targetPrice);
+    }
+
+    int spread = 0;
+    if (quote.getBestBid().isPresent() && quote.getBestAsk().isPresent()) {
+      spread = quote.getBestAsk().get().getPrice() - quote.getBestBid().get().getPrice();
+    }
+
+    int quoteDiff = (quote.getTotalAskAmount() - quote.getTotalBidAmount()) * 10 / maxAmount;
+    if (quoteDiff == 0) {
+      if (quote.getBestBid().isPresent()) {
+        targetPrice =
+            quote.getBestBid().get().getPrice() + Math.max(1, (int) Math.round(spread * 0.2));
       }
-    }
-
-    if (!dealMade) {
-      if (quote.getTotalBidAmount() > quote.getTotalAskAmount()) {
-        lastDealPrice += 1;
+      log.info("Amounts equal: {}", targetPrice);
+    } else if (quoteDiff < 0) {
+      targetPrice =
+          quote.getBestBid().get().getPrice() + Math.max(1, (int) Math.round(spread * 0.7));
+      log.info("Ask, spread {}, target price: {}", spread, targetPrice);
+    } else {
+      if (spread > 2) {
+        targetPrice += 1;
       }
+      log.info("Low demand: {}", targetPrice);
     }
 
-    int maxBid = maxPrice;
-    if (quote.getBestAsk().isPresent()) {
-      maxBid = quote.getBestAsk().get().getPrice();
+    if (targetPrice > maxPrice) {
+      targetPrice = maxPrice;
+      log.info("Price too high");
     }
 
+    int amount = (int) Math.round(Math.max(maxAmount, a * targetPrice + b) - currentAmountBought);
     List<Bid> bids = new ArrayList<>();
-    if (quote.getPrice() <= maxPrice) {
-      int amount =
-          (int) Math.round(Math.max(maxAmount, a * lastDealPrice + b) - currentAmountBought);
-      for (int i = 0; i < amount; i++) {
-        bids.add(new Bid(UUID.randomUUID().toString(), Math.min(lastDealPrice - i, maxBid), 1));
-      }
+    for (int i = 0; i < Math.min(maxAmount - currentAmountBought, amount); i++) {
+      bids.add(new Bid(UUID.randomUUID().toString(), targetPrice, 1));
     }
+    log.info("Created {} bids", bids.size());
 
-    dealMade = false;
     return bids;
   }
 
@@ -109,8 +126,6 @@ public class SimpleBuyer implements Buyer {
       totalPricePaid += bid.getPrice();
       totalAmountBought += bid.getAmount();
       currentAmountBought += bid.getAmount();
-      lastDealPrice = bid.getPrice();
-      dealMade = true;
     }
   }
 

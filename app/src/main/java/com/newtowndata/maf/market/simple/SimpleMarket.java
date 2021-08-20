@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,7 +104,7 @@ public class SimpleMarket implements Market {
     this.totalBidAmount = bids.stream().mapToInt(bid -> bid.getItem().getAmount()).sum();
 
     if (this.bestAsk.isPresent() && this.bestBid.isPresent()
-        && this.bestAsk.get().getPrice() == this.bestBid.get().getPrice()) {
+        && this.bestAsk.get().getPrice() <= this.bestBid.get().getPrice()) {
       // deal
       currentPrice = this.bestAsk.get().getPrice();
       LOG.info("Deal found: {}", currentPrice);
