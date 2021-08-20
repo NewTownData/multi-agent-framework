@@ -1,24 +1,26 @@
 /*
  * Copyright 2021 Voyta Krizek, https://github.com/NewTownData
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package com.newtowndata.maf.market.simple;
 
 import com.newtowndata.maf.market.Bid;
 import com.newtowndata.maf.market.Buyer;
+import com.newtowndata.maf.market.Quote;
 import com.newtowndata.maf.market.Trade;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 public class SimpleBuyer implements Buyer {
 
@@ -33,7 +35,8 @@ public class SimpleBuyer implements Buyer {
 
   private int currentAmountBought = 0;
   private int currentStep = -1;
-  private int lastBidPrice = 0;
+  private int lastDealPrice = 0;
+  private boolean dealMade = false;
 
   /**
    * Constructor.
@@ -53,45 +56,61 @@ public class SimpleBuyer implements Buyer {
 
 
   @Override
-  public void handleMarketPrice(int step, int currentMarketPrice) {
+  public void handleNextStep(int step) {
     if (currentStep != step) {
       currentAmountBought = 0;
       currentStep = step;
-      lastBidPrice = currentMarketPrice;
     }
   }
 
   @Override
-  public Optional<Bid> buy(Bid offer) {
+  public List<Bid> buy(Quote quote) {
     if (currentAmountBought >= maxAmount) {
-      return Optional.empty();
+      return Collections.emptyList();
     }
 
-    if (offer.getPrice() < lastBidPrice) {
-      lastBidPrice = offer.getPrice();
+    if (quote.getBestBid().isPresent()) {
+      if (lastDealPrice < quote.getBestBid().get().getAmount()) {
+        lastDealPrice = quote.getBestBid().get().getAmount();
+      }
+    } else {
+      if (lastDealPrice < quote.getPrice()) {
+        lastDealPrice = quote.getPrice() - 1;
+      }
     }
 
-    if (lastBidPrice > maxPrice) {
-      return Optional.empty();
+    if (!dealMade) {
+      if (quote.getTotalBidAmount() > quote.getTotalAskAmount()) {
+        lastDealPrice += 1;
+      }
     }
 
-    int calculatedAmount =
-        (int) Math.round(Math.max(maxAmount, a * lastBidPrice + b) - currentAmountBought);
-    if (calculatedAmount >= offer.getAmount()) {
-      return Optional.of(new Bid(lastBidPrice, offer.getAmount()));
+    int maxBid = maxPrice;
+    if (quote.getBestAsk().isPresent()) {
+      maxBid = quote.getBestAsk().get().getPrice();
     }
-    return Optional.empty();
+
+    List<Bid> bids = new ArrayList<>();
+    if (quote.getPrice() <= maxPrice) {
+      int amount =
+          (int) Math.round(Math.max(maxAmount, a * lastDealPrice + b) - currentAmountBought);
+      for (int i = 0; i < amount; i++) {
+        bids.add(new Bid(UUID.randomUUID().toString(), Math.min(lastDealPrice - i, maxBid), 1));
+      }
+    }
+
+    dealMade = false;
+    return bids;
   }
 
   @Override
   public void handleBuy(Bid bid) {
-    if (bid.getAmount() == 0) {
-      lastBidPrice = bid.getPrice() + 1;
-    } else {
+    if (bid.getAmount() > 0) {
       totalPricePaid += bid.getPrice();
       totalAmountBought += bid.getAmount();
       currentAmountBought += bid.getAmount();
-      lastBidPrice = Math.max(1, bid.getPrice() - 1);
+      lastDealPrice = bid.getPrice();
+      dealMade = true;
     }
   }
 

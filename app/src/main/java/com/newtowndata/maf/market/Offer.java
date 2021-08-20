@@ -13,14 +13,22 @@
  */
 package com.newtowndata.maf.market;
 
-public interface Market {
+public class Offer {
 
-  void registerBuyer(Buyer buyer);
+  private final int amount;
+  private final int askingPrice;
 
-  void registerSeller(Seller seller);
+  public Offer(int amount, int askingPrice) {
+    this.amount = amount;
+    this.askingPrice = askingPrice;
+  }
 
-  void initializeMarket(int initialStep, int initialPrice);
+  public int getAmount() {
+    return amount;
+  }
 
-  int runMarket(int step);
+  public int getAskingPrice() {
+    return askingPrice;
+  }
 
 }

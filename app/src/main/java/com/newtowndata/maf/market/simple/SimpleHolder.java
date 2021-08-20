@@ -11,16 +11,28 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.newtowndata.maf.market;
+package com.newtowndata.maf.market.simple;
 
-public interface Market {
+public class SimpleHolder<Player, Item> {
 
-  void registerBuyer(Buyer buyer);
+  private final Player player;
+  private final Item item;
 
-  void registerSeller(Seller seller);
+  public SimpleHolder(Player player, Item item) {
+    this.player = player;
+    this.item = item;
+  }
 
-  void initializeMarket(int initialStep, int initialPrice);
+  public Player getPlayer() {
+    return player;
+  }
 
-  int runMarket(int step);
+  public Item getItem() {
+    return item;
+  }
 
+  @Override
+  public String toString() {
+    return "{" + player + ", " + item + "}";
+  }
 }

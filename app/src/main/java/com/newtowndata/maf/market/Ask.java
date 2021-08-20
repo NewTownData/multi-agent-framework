@@ -13,14 +13,32 @@
  */
 package com.newtowndata.maf.market;
 
-public interface Market {
+public class Ask {
 
-  void registerBuyer(Buyer buyer);
+  private final String askId;
+  private final int price;
+  private final int amount;
 
-  void registerSeller(Seller seller);
+  public Ask(String askId, int price, int amount) {
+    this.askId = askId;
+    this.price = price;
+    this.amount = amount;
+  }
 
-  void initializeMarket(int initialStep, int initialPrice);
+  public String getAskId() {
+    return askId;
+  }
 
-  int runMarket(int step);
+  public int getAmount() {
+    return amount;
+  }
 
+  public int getPrice() {
+    return price;
+  }
+
+  @Override
+  public String toString() {
+    return "A(" + askId + "," + amount + "@" + price + ")";
+  }
 }
